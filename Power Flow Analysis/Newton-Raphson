@@ -1,0 +1,210 @@
+clear
+clc
+% element #    start     end      r        x           ysh
+datae=[1         1        4       0       0.0576       0;
+       2         4        6       0.017   0.092        0.079;
+       3         6        9       0.039   0.17         0.179;
+       4         3        9       0       0.0586       0;
+       5         8        9       0.0119  0.1008       0.1045;
+       6         7        8       0.0085  0.072        0.0745;
+       7         2        7       0       0.0625       0;
+       8         5        7       0.032   0.161        0.153;
+       9         5        4       0.01    0.085        0.088];
+    
+     e=length(datae);
+     b=max(max(datae(:,2)),max(datae(:,3)));
+     ybus(b,b)=0;
+     for k=1:e
+         if ((datae(k,2)~=0) & (datae(k,3)~=0))
+             ybus(datae(k,2),datae(k,3))=ybus(datae(k,2),datae(k,3))-1/(datae(k,4)+i*datae(k,5));
+             ybus(datae(k,3),datae(k,2))=ybus(datae(k,2),datae(k,3));
+             ybus(datae(k,2),datae(k,2))=ybus(datae(k,2),datae(k,2))+1/(datae(k,4)+i*datae(k,5))+i*datae(k,6);
+             ybus(datae(k,3),datae(k,3))=ybus(datae(k,3),datae(k,3))+1/(datae(k,4)+i*datae(k,5))+i*datae(k,6);
+         else
+             m=datae(k,2)+datae(k,3);
+             ybus(m,m)=ybus(m,m)+1/(datae(k,4)+i*datae(k,5));
+         end
+     end
+       % bus #  v      pg   Qg  Pl   Ql     type
+     datab=[1  1.04    0    0    0    0       0;
+            2  1.025   1.63 0    0    0       1;
+            3  1.025   0.85 0    0    0       1;
+            4   1      0    0    0    0       2;
+            5   1      0    0    1.25 0.5     2;
+            6   1      0    0    0.9   0.3    2;
+            7   1      0    0    0     0      2;
+            8   1      0    0    1     0.35   2;
+            9   1      0    0    0    0       2]   ;
+       for k = 1:b
+           if (datab(k,7) == 2)
+               vbus(k,1)=1;
+           else
+               vbus(k,1)=datab(k,2);
+           end
+       end
+       
+       for k =1:b
+           pn(k,1)=datab(k,3)-datab(k,5);
+           qn(k,1)=datab(k,4)-datab(k,6);
+       end
+       
+       it=0;
+       acc=0.00001;
+       error = 10;
+       while (error > acc) 
+           
+           it=it+1;
+       ibus=ybus*vbus;
+       for k=1:b
+           scal(k,1)=vbus(k,1)*conj(ibus(k,1));
+       end
+       
+       
+       
+       %  J1
+       r=0;
+       for k = 2:b
+           r=r+1;
+           c=0;
+           for m=2:b
+               if (datab(m,7)== 2)
+                   c=c+1;
+                   if(k==m)
+                       j1(r,c)=real(scal(k,1))/abs(vbus(k,1))+abs(vbus(k,1))*real(ybus(k,k));
+                   else
+                       j1(r,c)=abs(vbus(m,1)*ybus(m,k))*cos(angle(ybus(k,m)*vbus(m,1)/vbus(k,1)));
+                   end
+               end
+           end
+       end
+       
+       
+       
+       
+       
+       %  J2
+       r=0;
+       for k = 2:b
+           r=r+1;
+           c=0;
+           for m=2:b
+               if (datab(m,7)~= 0)
+                   c=c+1;
+                   if(k==m)
+                       j2(r,c)=-imag(scal(k,1))- (abs(vbus(k,1)))^2*imag(ybus(k,k));
+                   else
+                       j2(r,c)=-abs(vbus(k,1)*vbus(m,1)*ybus(m,k))*sin(angle(ybus(k,m)*vbus(m,1)/vbus(k,1)));
+                   end
+               end
+           end
+       end
+           
+       
+       
+       
+       %J3
+       r=0;
+       for k = 2:b
+           if( datab(k,7)== 2)
+           r=r+1;
+           c=0;
+           for m=2:b
+               if (datab(m,7)== 2)
+                   c=c+1;
+                   if(k==m)
+                       j3(r,c)=imag(scal(k,1))/abs(vbus(k,1))-abs(vbus(k,1))*imag(ybus(k,k));
+                   else
+                       j3(r,c)=-abs(vbus(m,1)*ybus(m,k))*sin(angle(ybus(k,m)*vbus(m,1)/vbus(k,1)));
+                   end
+               end
+           end
+           end
+           
+       end
+       
+       
+       
+       %  J4
+       r=0;
+       for k = 2:b
+         if (datab(k,7) == 2)
+           r=r+1;
+           c=0;
+           for m=2:b
+                  c=c+1;
+                   if(k==m)
+                       j4(r,c)=real(scal(k,1))- (abs(vbus(k,1)))^2*real(ybus(k,k));
+                   else
+                       j4(r,c)=-abs(vbus(k,1)*vbus(m,1)*ybus(m,k))*cos(angle(ybus(k,m)*vbus(m,1)/vbus(k,1)));
+                   end
+           
+           end
+end
+       end
+       J=[j1   j2;j3   j4];
+       
+       
+       
+       r=0;
+       for k=2:b
+           r=r+1;
+           dp(r,1)=pn(k,1)-real(scal(k,1));
+       end
+       
+       
+       r=0;
+       for k=2:b
+if(datab(k,7)== 2)
+           r=r+1;
+           dq(r,1)=qn(k,1)-imag(scal(k,1));
+end
+       end
+       
+       dpq=[dp;dq];
+       
+       dvd=inv(J)*dpq;
+       npq=length(dvd)-b+1;
+       for k=1:npq
+           dv(k,1)=dvd(k,1);
+       end
+       
+       r=0;
+        for k=npq+1:length(dvd)
+            r=r+1;
+           dd(r,1)=dvd(k,1);
+        end
+           
+       r=0;
+        for k=2:b
+            r=r+1;
+            new=angle(vbus(k,1))+dd(r,1);
+           vbus(k,1)= abs(vbus(k,1))*(cos(new)+i*sin(new));
+        end
+        
+        
+        
+        r=0;
+        for k= 2:b
+            if(datab(k,7)==2)
+                r=r+1;
+                new=abs(vbus(k,1))+dv(r,1);
+                vbus(k,1)=new*(cos(angle(vbus(k,1)))+i*sin(angle(vbus(k,1))));
+            end
+        end
+             error=max(abs(dp));   
+           
+       end  
+z=[datab(:,1),abs(vbus(:,1)),phase(vbus(:,1))*180/pi ,real(scal(:,1)),imag(scal(:,1))];
+disp('Bus=        #         |V|        delta         P            Q ')
+z
+disp(['Number of iteratiosn=' , num2str(it)])
+for nn=1:9 
+Z(nn,1)=datae(nn,1);
+Z(nn,2)= datae(nn,2);
+Z(nn,3)= datae(nn,3);
+Z(nn,4)=real(vbus(datae(nn,2))*conj(ibus(nn)));
+Z(nn,5)=-real(vbus(datae(nn,3))*conj(ibus(nn)));
+Z(nn,6)=abs (Z(nn,5)-Z(nn,4));
+end     
+disp('Element=    #           Start        End       Ps           Pe          losses  ')
+Z  
