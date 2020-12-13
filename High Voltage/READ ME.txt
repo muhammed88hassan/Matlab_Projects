@@ -1,0 +1,4 @@
+1- extract the two scripts (tree.m,HV_project.m) in the same directory 
+
+2-the output figure consists of UI tabs which contains all the voltage and currents at each junction as well as the vltage and lattice diagram for the whole system.
+ 
