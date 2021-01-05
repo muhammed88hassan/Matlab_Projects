@@ -12,3 +12,6 @@ This repository contains various MATLAB codes from different disciplines in elec
 4- Electric machines: Simulation of different types of electric motors and generators in various conditions and study cases.
 
 5- Power Electronics: Simulation of some power electronics circuits using Simulink.
+
+6- Maths : Newton’s method for solving the system of equations.
+7- Control : Modelling DC Motor and controlling it, Milk to cheese process modelling and control 
